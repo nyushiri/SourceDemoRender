@@ -238,6 +238,17 @@ GameFnProxy game_get_player_by_index_proxy_1()
     return px;
 }
 
+// For x64 CS:S. TF2 proxy works for now.
+GameFnProxy game_get_player_by_index_proxy_2()
+{
+    // Find UTIL_PlayerByIndex, use function (see Source 2013 SDK).
+
+    GameFnProxy px;
+    px.target = game_scan_pattern("client.dll", "40 53 48 83 EC ?? 8B D1", NULL);
+    px.proxy = game_player_by_index_proxy_0;
+    return px;
+}
+
 // ----------------------------------------------------------------
 
 // For x86 CS:S.
@@ -258,6 +269,17 @@ GameFnProxy game_get_spec_target_proxy_1()
 
     GameFnProxy px;
     px.target = game_scan_pattern("client.dll", "48 83 EC 28 E8 ?? ?? ?? ?? 48 85 C0 74 21 48 8B 10 48 8B C8 FF 92 ?? ?? ?? ?? 48 85 C0 74 10 48 8D 48 10", NULL);
+    px.proxy = game_spec_target_proxy_0;
+    return px;
+}
+
+// For x64 CS:S. TF2 proxy works for now.
+GameFnProxy game_get_spec_target_proxy_2()
+{
+    // Find GetSpectatorTarget, use function.
+
+    GameFnProxy px;
+    px.target = game_scan_pattern("client.dll", "48 83 EC ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 48 8B 10 48 8B C8 FF 92 ?? ?? ?? ?? 48 85 C0", NULL);
     px.proxy = game_spec_target_proxy_0;
     return px;
 }
@@ -469,6 +491,27 @@ GameFnProxy game_get_local_player_proxy_1()
     // Find C_BasePlayer::PostDataUpdate (or search "snd_soundmixer"), find global assignment to s_pLocalPlayer.
 
     u8* addr = (u8*)game_scan_pattern("client.dll", "48 89 05 ?? ?? ?? ?? 48 8D 15 ?? ?? ?? ?? 48 8B 01 FF 50 68 48 8B C8", NULL);
+
+    if (addr == NULL)
+    {
+        return {};
+    }
+
+    addr += 3;
+    addr = (u8*)game_follow_displacement(addr, 4);
+
+    GameFnProxy px;
+    px.target = addr;
+    px.proxy = game_local_player_proxy_1;
+    return px;
+}
+
+// For x64 CS:S.
+GameFnProxy game_get_local_player_proxy_2()
+{
+    // Find C_BasePlayer::PostDataUpdate (or search "snd_soundmixer"), find global assignment to s_pLocalPlayer.
+
+    u8* addr = (u8*)game_scan_pattern("client.dll", "48 89 05 ?? ?? ?? ?? 48 8D 15 ?? ?? ?? ?? 48 8B 05", NULL);
 
     if (addr == NULL)
     {
@@ -889,12 +932,14 @@ GameProxyOpt GAME_PLAYER_BY_INDEX_PROXIES[] =
 {
     GameProxyOpt { SVR_IS_X86(), game_get_player_by_index_proxy_0, { "client.dll" }, 0 },
     GameProxyOpt { SVR_IS_X64(), game_get_player_by_index_proxy_1, { "client.dll" }, 0 },
+    GameProxyOpt { SVR_IS_X64(), game_get_player_by_index_proxy_2, { "client.dll" }, 0 },
 };
 
 GameProxyOpt GAME_SPEC_TARGET_PROXIES[] =
 {
     GameProxyOpt { SVR_IS_X86(), game_get_spec_target_proxy_0, { "client.dll" }, 0 },
     GameProxyOpt { SVR_IS_X64(), game_get_spec_target_proxy_1, { "client.dll" }, 0 },
+    GameProxyOpt { SVR_IS_X64(), game_get_spec_target_proxy_2, { "client.dll" }, 0 },
 };
 
 GameOverrideOpt GAME_END_MOVIE_OVERRIDES[] =
@@ -933,6 +978,7 @@ GameProxyOpt GAME_LOCAL_PLAYER_PROXIES[] =
 {
     GameProxyOpt { SVR_IS_X86(), game_get_local_player_proxy_0, { "client.dll" }, 0 },
     GameProxyOpt { SVR_IS_X64(), game_get_local_player_proxy_1, { "client.dll" }, 0 },
+    GameProxyOpt { SVR_IS_X64(), game_get_local_player_proxy_2, { "client.dll" }, 0 },
 };
 
 GameProxyOpt GAME_SPEC_TARGET_OR_LOCAL_PLAYER_PROXIES[] =
